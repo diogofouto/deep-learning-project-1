@@ -19,7 +19,16 @@ def solve_analytically(X, y):
     This function should return a vector of size n_features (the same size as
     the weight vector in the LinearRegression class).
     """
-    raise NotImplementedError
+
+    xt = np.transpose(X)
+    w = np.matmul(
+            np.matmul(
+                np.linalg.inv(
+                    np.matmul(xt,X)),
+                 xt),
+            y)
+    return w
+    #raise NotImplementedError
 
 
 class _RegressionModel:
@@ -61,7 +70,14 @@ class LinearRegression(_RegressionModel):
         This function makes an update to the model weights (in other words,
         self.w).
         """
-        raise NotImplementedError
+        y_hat = self.predict(x_i)
+
+        # Update if our prediction was wrong
+        if(y_hat != y_i):
+            #TODO: CHECK THIS... THIS IS JUST A PERCEPTRON UPDATE! I thought LR used the analitical solution
+            self.w += learning_rate*y_hat*x_i
+
+        #raise NotImplementedError
 
     def predict(self, X):
         return np.dot(X, self.w)
