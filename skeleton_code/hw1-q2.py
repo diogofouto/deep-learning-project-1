@@ -21,10 +21,15 @@ def solve_analytically(X, y):
     """
 
     xt = np.transpose(X)
+    
+    # Add a regularization factor with an identity with the smallest value of the shape
+    # That way, after multiplying X with the inverse, it is always able to add reg.
+    regulization = np.identity(min(X.shape[0], X.shape[1])) * 0.0001
+    
     w = np.matmul(
             np.matmul(
                 np.linalg.inv(
-                    np.matmul(xt,X)),
+                    np.matmul(xt,X) + regulization),
                  xt),
             y)
     return w
