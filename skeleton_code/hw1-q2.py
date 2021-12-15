@@ -79,10 +79,17 @@ class LinearRegression(_RegressionModel):
 
         # Update if our prediction was wrong
         if(y_hat != y_i):
-            #TODO: CHECK THIS... THIS IS JUST A PERCEPTRON UPDATE! I thought LR used the analitical solution
-            self.w += learning_rate*y_hat*x_i
+            # Since L = 1/2 * (y_i - y_hat)^2
+            # Where y_hat = w dot x_i
+            # we have that L = 1/2 * (y_i - w(transposed) * x_i) ^2
+            # So dL / dw = (1/2) * 2 * -x_i * (y_i - w(transposed)* x_i)
+            #            = -x_i * (y_i - y_hat)
 
-        #raise NotImplementedError
+            #Calculate deltaW of L
+            dL = -x_i * (y_i - y_hat)
+
+            #Gradient descent
+            self.w -= learning_rate*dL
 
     def predict(self, X):
         return np.dot(X, self.w)
