@@ -107,12 +107,12 @@ class NeuralRegression(_RegressionModel):
         """
 
         # Weight for hidden and last layer
-        self.w1 = np.random.normal(center=0.1, scale=0.01,size=(hidden,n_features))
-        self.w2 = np.random.normal(center=0.1, scale=0.01,size=(1,hidden))
+        self.w1 = np.random.normal(loc=0.1, scale=0.01,size=(hidden,n_features))
+        self.w2 = np.random.normal(loc=0.1, scale=0.01,size=(1,hidden))
 
         # Biases for hidden and last layer
         self.b1 = np.zeros((hidden))
-        self.b2 = np.zeroes((1))
+        self.b2 = np.zeros((1))
 
     def update_weight(self, x_i, y_i, learning_rate=0.001):
         """
