@@ -29,6 +29,8 @@ class LogisticRegression(nn.Module):
         super().__init__()
         # In a pytorch module, the declarations of layers needs to come after
         # the super __init__ line, otherwise the magic doesn't work.
+        self.layer = nn.Linear(n_features, n_classes)
+        self.activation = nn.Sigmoid()
 
     def forward(self, x, **kwargs):
         """
@@ -44,7 +46,9 @@ class LogisticRegression(nn.Module):
         forward pass -- this is enough for it to figure out how to do the
         backward pass.
         """
-        raise NotImplementedError
+        X = self.layer(x)
+        X = self.activation(X)
+        return X
 
 
 # Q3.2
@@ -65,7 +69,22 @@ class FeedforwardNetwork(nn.Module):
         includes modules for several activation functions and dropout as well.
         """
         super().__init__()
-        # Implement me!
+
+        #Add n layers (Not counting with last activation!)
+        self.layers = []
+
+        self.layers.append(nn.Linear(n_features, hidden_size))
+        for _ in range(0, layers-1):
+            self.layers.append(nn.Linear(hidden_size, hidden_size))
+
+        self.layers.append(nn.Linear(hidden_size, n_classes))
+
+        if activation_type == 'relu':
+            self.activation = nn.ReLU()
+        else:
+            self.activation = nn.Tanh()
+
+        self.dropout = nn.Dropout(p=dropout)
 
     def forward(self, x, **kwargs):
         """
@@ -75,8 +94,14 @@ class FeedforwardNetwork(nn.Module):
         the output logits from x. This will include using various hidden
         layers, pointwise nonlinear functions, and dropout.
         """
-        raise NotImplementedError
-
+        #TODO: Might need to cycle through the various examples in each batch
+        val = x
+        for l in self.layers:
+            val = self.dropout(val)
+            val = l(val)
+            val = self.activation(val)
+        
+        return val
 
 def train_batch(X, y, model, optimizer, criterion, **kwargs):
     """
@@ -96,7 +121,20 @@ def train_batch(X, y, model, optimizer, criterion, **kwargs):
     This function should return the loss (tip: call loss.item()) to get the
     loss as a numerical value that is not part of the computation graph.
     """
-    raise NotImplementedError
+    model.train()  # <-- here
+    loss_history = []   # Used to get the mean of the losses
+    for x_i in X:
+        optimizer.zero_grad() # sets the gradients "to zero".
+
+        y_ = model(x_i)
+        loss = criterion(y_, y)
+        
+        loss_history.append(loss.item())
+
+        loss.backward() # computes the gradients.
+        optimizer.step() # updates weights using the gradients.
+
+    return torch.mean(loss_history)
 
 
 def predict(model, X):

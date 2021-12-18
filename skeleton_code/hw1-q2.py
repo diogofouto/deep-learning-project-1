@@ -86,7 +86,7 @@ class LinearRegression(_RegressionModel):
             #            = -x_i * (y_i - y_hat)
 
             #Calculate deltaW of L
-            dL = -x_i * (y_i - y_hat)
+            dL = np.dot(-x_i, (y_i - y_hat))
 
             #Gradient descent
             self.w -= learning_rate*dL
@@ -107,8 +107,8 @@ class NeuralRegression(_RegressionModel):
         """
 
         # Weight for hidden and last layer
-        self.w1 = np.random.normal(loc=0.1, scale=0.01,size=(hidden,n_features))
-        self.w2 = np.random.normal(loc=0.1, scale=0.01,size=(1,hidden))
+        self.w1 = np.random.normal(loc=0.1, scale=0.1,size=(hidden,n_features))
+        self.w2 = np.random.normal(loc=0.1, scale=0.1,size=(1,hidden))
 
         # Biases for hidden and last layer
         self.b1 = np.zeros((hidden))
@@ -120,7 +120,41 @@ class NeuralRegression(_RegressionModel):
 
         This function makes an update to the model weights
         """
-        raise NotImplementedError
+        #TODO: I NEED THESE VARIABLES HERE! ELSE I CANT BACK PROP
+        z1 = np.dot(self.w1,x_i) + self.b1
+        h1 = np.maximum(z1, 0)  # does max(x, 0) for every value x in the vector
+                                # Equivalent to reLU
+
+        # Compute the final result
+        z2 = np.dot(self.w2,h1) + self.b2
+        h2 = np.maximum(z2, 0)  #TODO: Check if this is needed
+
+        # use mean squared loss TODO NOT USED?
+        loss = (1/2) * (np.linalg.norm(h2 - y_i)**2)
+
+        # Calculate gradients to update weights
+
+        grad_z2 = h2 - y_i  # Grad of loss wrt z3.
+
+        # Gradient of hidden parameters.
+        grad_W2 = grad_z2[:, None].dot(h1[:, None].T)
+        grad_b2 = grad_z2
+
+        # Gradient of hidden layer below.
+        grad_h1 = self.w2.T.dot(grad_z2)
+
+        # Gradient of hidden layer below before activation.
+        grad_z1 = grad_h1 * (1-h1**2)   # Grad of loss wrt z3.
+
+        # Gradient of hidden parameters.
+        grad_W1 = grad_z1[:, None].dot(x_i[:, None].T)
+        grad_b1 = grad_z1
+        
+        # Update weights
+        self.w1 -= learning_rate*grad_W1
+        self.b1 -= learning_rate*grad_b1
+        self.w2 -= learning_rate*grad_W2
+        self.b2 -= learning_rate*grad_b2
 
     def predict(self, X):
         """
@@ -136,13 +170,13 @@ class NeuralRegression(_RegressionModel):
         """
 
         # Compute the hidden layer
-        z1 = np.matmul(self.w1*X + self.b1)
+        z1 = np.dot(self.w1,X) + self.b1
         h1 = np.maximum(z1, 0)  # does max(x, 0) for every value x in the vector
                                 # Equivalent to reLU
 
         # Compute the final result
-        z2 = np.matmul(self.w2*h1 + self.b2)
-        h2 = np.maximum(z2, 0)
+        z2 = np.dot(self.w2,h1) + self.b2
+        h2 = np.maximum(z2, 0)  #TODO: Check if this is needed
 
         return h2
 
