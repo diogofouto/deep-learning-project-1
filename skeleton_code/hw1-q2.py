@@ -120,17 +120,12 @@ class NeuralRegression(_RegressionModel):
 
         This function makes an update to the model weights
         """
+        
         #TODO: I NEED THESE VARIABLES HERE! ELSE I CANT BACK PROP
         z1 = np.dot(self.w1,x_i) + self.b1
-        h1 = np.maximum(z1, 0)  # does max(x, 0) for every value x in the vector
-                                # Equivalent to reLU
-
-        # Compute the final result
+        h1 = np.maximum(z1, 0) 
         z2 = np.dot(self.w2,h1) + self.b2
-        h2 = np.maximum(z2, 0)  #TODO: Check if this is needed
-
-        # use mean squared loss TODO NOT USED?
-        loss = (1/2) * (np.linalg.norm(h2 - y_i)**2)
+        h2 = np.maximum(z2, 0)
 
         # Calculate gradients to update weights
 
@@ -168,17 +163,18 @@ class NeuralRegression(_RegressionModel):
         update_weight because it returns only the final output of the network,
         not any of the intermediate values needed to do backpropagation.
         """
+        Y_hat = []
+        for x_i in X:
+            # Compute the hidden layer
+            z1 = np.dot(self.w1,x_i) + self.b1
+            h1 = np.maximum(z1, 0)  # does max(x, 0) for every value x in the vector
+                                    # Equivalent to reLU
 
-        # Compute the hidden layer
-        z1 = np.dot(self.w1,X) + self.b1
-        h1 = np.maximum(z1, 0)  # does max(x, 0) for every value x in the vector
-                                # Equivalent to reLU
-
-        # Compute the final result
-        z2 = np.dot(self.w2,h1) + self.b2
-        h2 = np.maximum(z2, 0)  #TODO: Check if this is needed
-
-        return h2
+            # Compute the final result
+            z2 = np.dot(self.w2,h1) + self.b2
+            h2 = np.maximum(z2, 0)  #TODO: Check if this is needed
+            Y_hat.append(h2)
+        return Y_hat
 
 
 def plot(epochs, train_loss, test_loss):

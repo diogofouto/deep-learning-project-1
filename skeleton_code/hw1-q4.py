@@ -123,18 +123,16 @@ def train_batch(X, y, model, optimizer, criterion, **kwargs):
     """
     model.train()  # <-- here
     loss_history = []   # Used to get the mean of the losses
-    for x_i in X:
-        optimizer.zero_grad() # sets the gradients "to zero".
 
-        y_ = model(x_i)
-        loss = criterion(y_, y)
-        
-        loss_history.append(loss.item())
+    optimizer.zero_grad() # sets the gradients "to zero".
+    y_ = model(X)
+    loss = criterion(y_, y)
+    
+    loss_history.append(loss.item())
+    loss.backward() # computes the gradients.
+    optimizer.step() # updates weights using the gradients.
 
-        loss.backward() # computes the gradients.
-        optimizer.step() # updates weights using the gradients.
-
-    return torch.mean(loss_history)
+    return torch.mean(torch.tensor(loss_history))
 
 
 def predict(model, X):
@@ -210,7 +208,7 @@ def main():
 
     # get an optimizer
     optims = {"adam": torch.optim.Adam, "sgd": torch.optim.SGD}
-
+    
     optim_cls = optims[opt.optimizer]
     optimizer = optim_cls(
         model.parameters(),
