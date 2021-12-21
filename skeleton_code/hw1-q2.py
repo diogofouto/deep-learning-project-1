@@ -163,7 +163,7 @@ class NeuralRegression(_RegressionModel):
         update_weight because it returns only the final output of the network,
         not any of the intermediate values needed to do backpropagation.
         """
-        Y_hat = []
+        Y_hat = np.array([])
         for x_i in X:
             # Compute the hidden layer
             z1 = np.dot(self.w1,x_i) + self.b1
@@ -173,7 +173,7 @@ class NeuralRegression(_RegressionModel):
             # Compute the final result
             z2 = np.dot(self.w2,h1) + self.b2
             h2 = np.maximum(z2, 0)  #TODO: Check if this is needed
-            Y_hat.append(h2)
+            Y_hat = np.append(Y_hat,h2[0])
         return Y_hat
 
 
