@@ -139,7 +139,7 @@ class NeuralRegression(_RegressionModel):
         grad_h1 = self.w2.T.dot(grad_z2)
 
         # Gradient of hidden layer below before activation.
-        grad_z1 = grad_h1 * (1-h1**2)   # Grad of loss wrt z3.
+        grad_z1 = grad_h1 * (1*(h1>0))   # Grad of loss wrt z3. TODO: Check gradient calculation!
 
         # Gradient of hidden parameters.
         grad_W1 = grad_z1[:, None].dot(x_i[:, None].T)
