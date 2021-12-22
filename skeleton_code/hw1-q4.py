@@ -71,13 +71,10 @@ class FeedforwardNetwork(nn.Module):
         super().__init__()
 
         #Add n layers (Not counting with last activation!)
-        self.layers = []
-
-        self.layers.append(nn.Linear(n_features, hidden_size))
-        for _ in range(0, layers-1):
-            self.layers.append(nn.Linear(hidden_size, hidden_size))
-
-        self.layers.append(nn.Linear(hidden_size, n_classes))
+        self.ff1 = nn.Linear(n_features, hidden_size)
+        #self.ff2 = nn.Linear(hidden_size, hidden_size)
+        #self.ff3 = nn.Linear(hidden_size, hidden_size)
+        self.ff_final = nn.Linear(hidden_size, n_classes)
 
         if activation_type == 'relu':
             self.activation = nn.ReLU()
@@ -96,11 +93,22 @@ class FeedforwardNetwork(nn.Module):
         """
         #TODO: Might need to cycle through the various examples in each batch
         val = x
-        for l in self.layers:
-            val = self.dropout(val)
-            val = l(val)
-            val = self.activation(val)
         
+        val = self.dropout(val)
+        val = self.ff1(val)
+        val = self.activation(val)
+        
+        #val = self.dropout(val)
+        #val = self.ff2(val)
+        #val = self.activation(val)
+        #
+        #val = self.dropout(val)
+        #val = self.ff3(val)
+        #val = self.activation(val)
+        
+        val = self.dropout(val)
+        val = self.ff_final(val)
+        val = self.activation(val)
         return val
 
 def train_batch(X, y, model, optimizer, criterion, **kwargs):
