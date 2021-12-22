@@ -11,7 +11,6 @@ import matplotlib.pyplot as plt
 
 import utils
 
-
 def configure_seed(seed):
     os.environ["PYTHONHASHSEED"] = str(seed)
     random.seed(seed)
@@ -74,13 +73,50 @@ class MLP(object):
     # in main().
     def __init__(self, n_classes, n_features, hidden_size):
         # Initialize an MLP with a single hidden layer.
-        raise NotImplementedError
+
+        rng = np.random.default_rng()
+
+        self.l1_weights = rng.normal(loc=0.1, scale=0.1 ** 2, size=(hidden_size, n_features))
+        self.out_weights = rng.normal(loc=0.1, scale=0.1 ** 2, size=(n_classes, hidden_size))
+
+        self.l1_bias = np.zeros(hidden_size)
+        self.out_bias = np.zeros(n_classes)
+
+    def pre_activation(self, X, weights, bias):
+        return weights @ X + bias
+
+    def l1_pre_activation(self, X):
+        return self.pre_activation(X.T, self.l1_weights, self.l1_bias)
+
+    def out_pre_activation(self, X):
+        return self.pre_activation(X, self.out_weights, self.out_bias)
+
+    def l1_activation(self, l1_pre_activation):
+        return np.maximum(0, l1_pre_activation)
+
+    def out_activation(self, out_preactivation):
+        def softmax(X):
+            
+            print(X)
+
+            num = np.exp(X)
+            den = np.sum(np.exp(X))
+
+            print(num, den)
+
+            probs = num / den
+
+            return probs
+        return softmax(out_preactivation)
 
     def predict(self, X):
         # Compute the forward pass of the network. At prediction time, there is
         # no need to save the values of hidden nodes, whereas this is required
         # at training time.
-        raise NotImplementedError
+
+        l1_activation = self.l1_activation(self.l1_pre_activation(X))
+
+        return self.out_activation(self.out_pre_activation(l1_activation))
 
     def evaluate(self, X, y):
         """
@@ -94,8 +130,35 @@ class MLP(object):
         return n_correct / n_possible
 
     def train_epoch(self, X, y, learning_rate=0.001):
-        raise NotImplementedError
+        def update_weights_and_biases(grad_w1, grad_w2, grad_b1, grad_b2):
+            self.l1_weights     -= learning_rate * grad_w1
+            self.l1_bias        -= learning_rate * grad_b1
+            self.out_weights    -= learning_rate * grad_w2
+            self.out_bias       -= learning_rate * grad_b2
 
+        for i in range(len(X)):
+            pred = self.predict(X[i])
+            h1 = self.l1_activation(self.l1_pre_activation(X[i]))
+
+
+            grad_z2 = pred - y[i]
+            print(grad_z2, len(grad_z2))
+            print(h1.T, len(h1.T))
+            grad_weights_2 = grad_z2 @ h1.T
+            grad_biases_2 = grad_z2
+
+            grad_h1 = self.out_weights.T @ grad_z2
+
+            grad_z1 = grad_h1 * (1 - h1 ** 2)
+
+            grad_weights_1 = grad_z1 @ X[i].T
+            grad_biases_1 = grad_z1
+
+            update_weights_and_biases(
+                                        grad_weights_1,
+                                        grad_weights_2,
+                                        grad_biases_1,
+                                        grad_biases_2)
 
 def plot(epochs, valid_accs, test_accs):
     plt.xlabel('Epoch')
@@ -143,7 +206,7 @@ def main():
     elif opt.model == 'logistic_regression':
         model = LogisticRegression(n_classes, n_feats)
     else:
-        model = MLP(n_classes, n_feats, opt.hidden_size, opt.layers)
+        model = MLP(n_classes, n_feats, opt.hidden_size)
     epochs = np.arange(1, opt.epochs + 1)
     valid_accs = []
     test_accs = []
