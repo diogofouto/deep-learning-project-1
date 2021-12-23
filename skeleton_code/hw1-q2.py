@@ -184,7 +184,7 @@ def plot(epochs, train_loss, test_loss):
     plt.plot(epochs, train_loss, label='train')
     plt.plot(epochs, test_loss, label='test')
     plt.legend()
-    plt.show()
+    plt.savefig("plot.png")
 
 
 def plot_dist_from_analytic(epochs, dist):
@@ -193,7 +193,7 @@ def plot_dist_from_analytic(epochs, dist):
     plt.xticks(np.arange(0, epochs[-1] + 1, step=10))
     plt.plot(epochs, dist, label='dist')
     plt.legend()
-    plt.show()
+    plt.savefig("dist.png")
 
 
 def main():
