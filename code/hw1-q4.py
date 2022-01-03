@@ -281,7 +281,8 @@ def main():
         valid_accs.append(evaluate(model, dev_X, dev_y))
         print('Valid acc: %.4f' % (valid_accs[-1]))
 
-    print('Final Test acc: %.4f' % (evaluate(model, test_X, test_y)))
+    acc = evaluate(model, test_X, test_y)
+    print('Final Test acc: %.4f' % acc)
 
     # plot
     if opt.model != 'mlp':
@@ -290,7 +291,7 @@ def main():
     else:
         filename_desc = "-LR"+str(opt.learning_rate)+"-HS"+str(opt.hidden_sizes)+"-DP"+str(opt.dropout)+"-AF"+opt.activation+"-OP"+opt.optimizer+"-Ls"+str(opt.layers)
         plot(epochs, train_mean_losses, ylabel='Loss', name='../images/4-MLP/Loss'+filename_desc)
-        plot(epochs, valid_accs, ylabel='Accuracy', name='../images/4-MLP/Valid'+filename_desc)
+        plot(epochs, valid_accs, ylabel='Accuracy', name='../images/4-MLP/Valid'+filename_desc+"acc-"+str(acc))
 
 
 if __name__ == '__main__':
