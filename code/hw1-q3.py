@@ -88,8 +88,8 @@ class MLP(object):
 
         rng = np.random.default_rng()
 
-        self.l1_weights = rng.normal(loc=0.1, scale=0.1 ** 2, size=(hidden_size, n_features))
-        self.out_weights = rng.normal(loc=0.1, scale=0.1 ** 2, size=(n_classes, hidden_size))
+        self.l1_weights = rng.normal(loc=0.1, scale=0.1, size=(hidden_size, n_features))
+        self.out_weights = rng.normal(loc=0.1, scale=0.1, size=(n_classes, hidden_size))
 
         self.l1_bias = np.zeros(hidden_size)
         self.out_bias = np.zeros(n_classes)
@@ -98,7 +98,7 @@ class MLP(object):
         return weights @ X + bias
 
     def l1_pre_activation(self, X):
-        return self.pre_activation(X.T, self.l1_weights, self.l1_bias)
+        return self.pre_activation(X, self.l1_weights, self.l1_bias)
 
     def out_pre_activation(self, X):
         return self.pre_activation(X, self.out_weights, self.out_bias)
@@ -108,37 +108,42 @@ class MLP(object):
 
     def out_activation(self, out_preactivation):
         def softmax(X):
+            z = X - X.max()
+            return np.exp(z) / np.sum(np.exp(z), axis=0)
             
-            print(X)
-
-            num = np.exp(X)
-            den = np.sum(np.exp(X))
-
-            print(num, den)
-
-            probs = num / den
-
-            return probs
         return softmax(out_preactivation)
 
+    def forward(self, X):
+        l1_activation = self.l1_activation(self.l1_pre_activation(X))
+        output = self.out_activation(self.out_pre_activation(l1_activation))
+
+        return output
+    
     def predict(self, X):
         # Compute the forward pass of the network. At prediction time, there is
         # no need to save the values of hidden nodes, whereas this is required
         # at training time.
 
-        l1_activation = self.l1_activation(self.l1_pre_activation(X))
-
-        return self.out_activation(self.out_pre_activation(l1_activation))
+        output = self.forward(X)
+        label = np.zeros_like(output)
+        label[np.argmax(output)] = 1
+        return label
 
     def evaluate(self, X, y):
         """
         X (n_examples x n_features)
         y (n_examples): gold labels
         """
-        # Identical to LinearModel.evaluate()
-        y_hat = self.predict(X)
-        n_correct = (y == y_hat).sum()
+
+        preds = []
+        for ix in range(X.shape[0]):
+            y_hat = self.predict(X[ix])
+            preds.append(np.argmax(y_hat))
+
+        y_hat = np.array(preds)
+        n_correct = np.equal(y_hat, y).sum()
         n_possible = y.shape[0]
+
         return n_correct / n_possible
 
     def train_epoch(self, X, y, learning_rate=0.001):
@@ -148,22 +153,24 @@ class MLP(object):
             self.out_weights    -= learning_rate * grad_w2
             self.out_bias       -= learning_rate * grad_b2
 
-        for i in range(len(X)):
-            pred = self.predict(X[i])
+        for i in range(X.shape[0]):
+            pred = self.forward(X[i])
             h1 = self.l1_activation(self.l1_pre_activation(X[i]))
 
+            # softmax_c(z(x)) - 1(y = c)
+            true_label = np.zeros_like(pred)
+            true_label[y[i]] = 1
+            grad_z2 = pred - true_label
 
-            grad_z2 = pred - y[i]
-            print(grad_z2, len(grad_z2))
-            print(h1.T, len(h1.T))
-            grad_weights_2 = grad_z2 @ h1.T
+            grad_weights_2 = grad_z2[:, None] @ h1[:, None].T
             grad_biases_2 = grad_z2
 
             grad_h1 = self.out_weights.T @ grad_z2
 
-            grad_z1 = grad_h1 * (1 - h1 ** 2)
+            # grad_h1 * relu derivative
+            grad_z1 = grad_h1 * ((self.l1_pre_activation(X[i]) > 0) * 1)
 
-            grad_weights_1 = grad_z1 @ X[i].T
+            grad_weights_1 = grad_z1[:, None] @ X[i][:, None].T
             grad_biases_1 = grad_z1
 
             update_weights_and_biases(
@@ -179,7 +186,7 @@ def plot(epochs, valid_accs, test_accs):
     plt.plot(epochs, valid_accs, label='validation')
     plt.plot(epochs, test_accs, label='test')
     plt.legend()
-    plt.show()
+    plt.savefig("hw1-q3-mlp.png", dpi=300)
 
 
 def main():
