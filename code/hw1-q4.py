@@ -70,18 +70,52 @@ class FeedforwardNetwork(nn.Module):
         """
         super().__init__()
 
-        #Add n layers (Not counting with last activation!)
-        self.ff1 = nn.Linear(n_features, hidden_size)
-        #self.ff2 = nn.Linear(hidden_size, hidden_size)
-        #self.ff3 = nn.Linear(hidden_size, hidden_size)
-        self.ff_final = nn.Linear(hidden_size, n_classes)
+        # List of layers to add
+        # NOTE: I ASSUMED THE AMOUNT OF LAYERS DOESNT ACCOUNT FOR FIRST AND lAST LAYERS
+        ls = []
 
+        # Add first layer:
+        ls.append(nn.Dropout(p=dropout))
+        ls.append(nn.Linear(n_features, hidden_size))
         if activation_type == 'relu':
-            self.activation = nn.ReLU()
+            ls.append(nn.ReLU())
         else:
-            self.activation = nn.Tanh()
+            ls.append(nn.Tanh())
 
-        self.dropout = nn.Dropout(p=dropout)
+        # add middle layers
+        for _ in range(0, layers):
+            ls.append(nn.Dropout(p=dropout))
+            ls.append(nn.Linear(hidden_size, hidden_size))
+            if activation_type == 'relu':
+                ls.append(nn.ReLU())
+            else:
+                ls.append(nn.Tanh())
+
+        # add activation layer
+        ls.append(nn.Dropout(p=dropout))
+        ls.append(nn.Linear(hidden_size, n_classes))
+        if activation_type == 'relu':
+            ls.append(nn.ReLU())
+        else:
+            ls.append(nn.Tanh())
+
+
+        self.layer = nn.Sequential(*ls)
+
+        #self.ff1 = nn.Linear(n_features, hidden_size)
+        #
+        #if(layers == 1):
+        #    self.ff2 = nn.Linear(hidden_size, hidden_size)
+        #if(layers > 2):
+        #    self.ff3 = nn.Linear(hidden_size, hidden_size)
+        #self.ff_final = nn.Linear(hidden_size, n_classes)
+        #
+        #if activation_type == 'relu':
+        #    self.activation = nn.ReLU()
+        #else:
+        #    self.activation = nn.Tanh()
+        #
+        #self.dropout = nn.Dropout(p=dropout)
 
     def forward(self, x, **kwargs):
         """
@@ -91,13 +125,15 @@ class FeedforwardNetwork(nn.Module):
         the output logits from x. This will include using various hidden
         layers, pointwise nonlinear functions, and dropout.
         """
+
+        val = self.layer.forward(x)
         #TODO: Might need to cycle through the various examples in each batch
-        val = x
-        
-        val = self.dropout(val)
-        val = self.ff1(val)
-        val = self.activation(val)
-        
+        #val = x
+        #
+        #val = self.dropout(val)
+        #val = self.ff1(val)
+        #val = self.activation(val)
+        #
         #val = self.dropout(val)
         #val = self.ff2(val)
         #val = self.activation(val)
@@ -105,10 +141,10 @@ class FeedforwardNetwork(nn.Module):
         #val = self.dropout(val)
         #val = self.ff3(val)
         #val = self.activation(val)
-        
-        val = self.dropout(val)
-        val = self.ff_final(val)
-        val = self.activation(val)
+        #
+        #val = self.dropout(val)
+        #val = self.ff_final(val)
+        #val = self.activation(val)
         return val
 
 def train_batch(X, y, model, optimizer, criterion, **kwargs):
@@ -246,9 +282,15 @@ def main():
         print('Valid acc: %.4f' % (valid_accs[-1]))
 
     print('Final Test acc: %.4f' % (evaluate(model, test_X, test_y)))
+
     # plot
-    plot(epochs, train_mean_losses, ylabel='Loss', name='training-loss')
-    plot(epochs, valid_accs, ylabel='Accuracy', name='validation-accuracy')
+    if opt.model != 'mlp':
+        plot(epochs, train_mean_losses, ylabel='Loss', name='training-loss')
+        plot(epochs, valid_accs, ylabel='Accuracy', name='validation-accuracy')
+    else:
+        filename_desc = "-LR"+str(opt.learning_rate)+"-HS"+str(opt.hidden_sizes)+"-DP"+str(opt.dropout)+"-AF"+opt.activation+"-OP"+opt.optimizer+"-Ls"+str(opt.layers)
+        plot(epochs, train_mean_losses, ylabel='Loss', name='../images/4-MLP/Loss'+filename_desc)
+        plot(epochs, valid_accs, ylabel='Accuracy', name='../images/4-MLP/Valid'+filename_desc)
 
 
 if __name__ == '__main__':
