@@ -12,7 +12,7 @@ from matplotlib import pyplot as plt
 import utils
 
 
-# Q3.1
+# Q4.1
 class LogisticRegression(nn.Module):
 
     def __init__(self, n_classes, n_features, **kwargs):
@@ -30,7 +30,7 @@ class LogisticRegression(nn.Module):
         # In a pytorch module, the declarations of layers needs to come after
         # the super __init__ line, otherwise the magic doesn't work.
         self.layer = nn.Linear(n_features, n_classes)
-        self.activation = nn.Sigmoid()
+        #self.activation = nn.Sigmoid()
 
     def forward(self, x, **kwargs):
         """
@@ -47,11 +47,11 @@ class LogisticRegression(nn.Module):
         backward pass.
         """
         X = self.layer(x)
-        X = self.activation(X)
+        #X = self.activation(X)
         return X
 
 
-# Q3.2
+# Q4.2
 class FeedforwardNetwork(nn.Module):
     def __init__(
             self, n_classes, n_features, hidden_size, layers,
