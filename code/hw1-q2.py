@@ -170,8 +170,7 @@ class NeuralRegression(_RegressionModel):
 
             # Compute the final result
             z2 = np.dot(self.w2,h1) + self.b2
-            h2 = np.maximum(z2, 0)  #TODO: Check if this is needed
-            Y_hat = np.append(Y_hat,h2[0])
+            Y_hat = np.append(Y_hat,z2[0])
         return Y_hat
 
 
