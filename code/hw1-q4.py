@@ -30,7 +30,6 @@ class LogisticRegression(nn.Module):
         # In a pytorch module, the declarations of layers needs to come after
         # the super __init__ line, otherwise the magic doesn't work.
         self.layer = nn.Linear(n_features, n_classes)
-        #self.activation = nn.Sigmoid()
 
     def forward(self, x, **kwargs):
         """
@@ -47,7 +46,6 @@ class LogisticRegression(nn.Module):
         backward pass.
         """
         X = self.layer(x)
-        #X = self.activation(X)
         return X
 
 
@@ -71,11 +69,9 @@ class FeedforwardNetwork(nn.Module):
         super().__init__()
 
         # List of layers to add
-        # NOTE: I ASSUMED THE AMOUNT OF LAYERS DOESNT ACCOUNT FOR FIRST AND lAST LAYERS
         ls = []
 
         # Add first layer:
-        ls.append(nn.Dropout(p=dropout))
         ls.append(nn.Linear(n_features, hidden_size))
         if activation_type == 'relu':
             ls.append(nn.ReLU())
@@ -102,21 +98,6 @@ class FeedforwardNetwork(nn.Module):
 
         self.layer = nn.Sequential(*ls)
 
-        #self.ff1 = nn.Linear(n_features, hidden_size)
-        #
-        #if(layers == 1):
-        #    self.ff2 = nn.Linear(hidden_size, hidden_size)
-        #if(layers > 2):
-        #    self.ff3 = nn.Linear(hidden_size, hidden_size)
-        #self.ff_final = nn.Linear(hidden_size, n_classes)
-        #
-        #if activation_type == 'relu':
-        #    self.activation = nn.ReLU()
-        #else:
-        #    self.activation = nn.Tanh()
-        #
-        #self.dropout = nn.Dropout(p=dropout)
-
     def forward(self, x, **kwargs):
         """
         x (batch_size x n_features): a batch of training examples
@@ -127,24 +108,6 @@ class FeedforwardNetwork(nn.Module):
         """
 
         val = self.layer.forward(x)
-        #TODO: Might need to cycle through the various examples in each batch
-        #val = x
-        #
-        #val = self.dropout(val)
-        #val = self.ff1(val)
-        #val = self.activation(val)
-        #
-        #val = self.dropout(val)
-        #val = self.ff2(val)
-        #val = self.activation(val)
-        #
-        #val = self.dropout(val)
-        #val = self.ff3(val)
-        #val = self.activation(val)
-        #
-        #val = self.dropout(val)
-        #val = self.ff_final(val)
-        #val = self.activation(val)
         return val
 
 def train_batch(X, y, model, optimizer, criterion, **kwargs):

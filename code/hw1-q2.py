@@ -33,7 +33,6 @@ def solve_analytically(X, y):
                  xt),
             y)
     return w
-    #raise NotImplementedError
 
 
 class _RegressionModel:
@@ -121,7 +120,6 @@ class NeuralRegression(_RegressionModel):
         This function makes an update to the model weights
         """
         
-        #TODO: I NEED THESE VARIABLES HERE! ELSE I CANT BACK PROP
         z1 = np.dot(self.w1,x_i) + self.b1
         h1 = np.maximum(z1, 0) 
         z2 = np.dot(self.w2,h1) + self.b2
@@ -139,7 +137,7 @@ class NeuralRegression(_RegressionModel):
         grad_h1 = self.w2.T.dot(grad_z2)
 
         # Gradient of hidden layer below before activation.
-        grad_z1 = grad_h1 * (1*(h1>0))   # Grad of loss wrt z3. TODO: Check gradient calculation!
+        grad_z1 = grad_h1 * (1*(h1>0))   # Grad of loss wrt z3.
 
         # Gradient of hidden parameters.
         grad_W1 = grad_z1[:, None].dot(x_i[:, None].T)
