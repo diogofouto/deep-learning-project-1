@@ -80,53 +80,65 @@ class LogisticRegression(LinearModel):
 
 
 class MLP(object):
-    # Q3.2b. This MLP skeleton code allows the MLP to be used in place of the
-    # linear models with no changes to the training loop or evaluation code
-    # in main().
-    def __init__(self, n_classes, n_features, hidden_size):
+    def __init__(self, n_classes, n_features, hidden_size, hidden_layers = 1):
         # Initialize an MLP with a single hidden layer.
 
         rng = np.random.default_rng()
 
-        self.l1_weights = rng.normal(loc=0.1, scale=0.1, size=(hidden_size, n_features))
-        self.out_weights = rng.normal(loc=0.1, scale=0.1, size=(n_classes, hidden_size))
+        assert(hidden_layers >= 1)
+        self.weights = [rng.normal(loc=0.1, scale=0.1, size=(hidden_size, n_features))]     # First layer
+        self.weights += [rng.normal(loc=0.1, scale=0.1, size=(hidden_size, hidden_size)) for i in range(hidden_layers - 1)]
+        self.weights.append(rng.normal(loc=0.1, scale=0.1, size=(n_classes, hidden_size)))  # Output layer
 
-        self.l1_bias = np.zeros(hidden_size)
-        self.out_bias = np.zeros(n_classes)
+        self.biases = [np.zeros(hidden_size) for i in range(hidden_layers)]                 # All hidden layers
+        self.biases.append(np.zeros(n_classes))                                             # Output layer
+
+    def relu(self, X):
+        return np.maximum(0, X)
+
+    def softmax(self, X):
+        z = X - X.max()     # To make softmax numerically stable
+        return np.exp(z) / np.sum(np.exp(z), axis=0)
 
     def pre_activation(self, X, weights, bias):
         return weights @ X + bias
 
-    def l1_pre_activation(self, X):
-        return self.pre_activation(X, self.l1_weights, self.l1_bias)
-
-    def out_pre_activation(self, X):
-        return self.pre_activation(X, self.out_weights, self.out_bias)
-
-    def l1_activation(self, l1_pre_activation):
-        return np.maximum(0, l1_pre_activation)
-
-    def out_activation(self, out_preactivation):
-        def softmax(X):
-            z = X - X.max()
-            return np.exp(z) / np.sum(np.exp(z), axis=0)
-            
-        return softmax(out_preactivation)
-
     def forward(self, X):
-        l1_activation = self.l1_activation(self.l1_pre_activation(X))
-        output = self.out_activation(self.out_pre_activation(l1_activation))
+        """
+        X: vector with n_features
 
-        return output
+        Returns: output, hidden_activations
+                    output:             the result of the softmax from the last layer
+                    hidden_activations: the activations of the hidden layers
+        """
+
+        hidden_activations = []
+        n_layers = len(self.weights)
+        output = None
+
+        for i in range(n_layers):
+            h = X if i == 0 else hidden_activations[i - 1]
+            z = self.pre_activation(h, self.weights[i], self.biases[i])
+
+            if i < n_layers - 1:
+                hidden_activations.append(self.relu(z))
+            else:
+                output = self.softmax(z)
+
+        return output, hidden_activations
     
     def predict(self, X):
-        # Compute the forward pass of the network. At prediction time, there is
-        # no need to save the values of hidden nodes, whereas this is required
-        # at training time.
+        """
+        X: vector with n_features
 
-        output = self.forward(X)
+        Returns: label: a one-hot vector that represents the class that the
+                        network predicts for the given vector.
+        """
+
+        output, _ = self.forward(X)
         label = np.zeros_like(output)
         label[np.argmax(output)] = 1
+
         return label
 
     def evaluate(self, X, y):
@@ -147,37 +159,43 @@ class MLP(object):
         return n_correct / n_possible
 
     def train_epoch(self, X, y, learning_rate=0.001):
-        def update_weights_and_biases(grad_w1, grad_w2, grad_b1, grad_b2):
-            self.l1_weights     -= learning_rate * grad_w1
-            self.l1_bias        -= learning_rate * grad_b1
-            self.out_weights    -= learning_rate * grad_w2
-            self.out_bias       -= learning_rate * grad_b2
+        def relu_derivative(X):
+            return (X > 0) * 1
+        
+        def update_weights_and_biases(grad_weights, grad_biases):
+            for i in range(n_layers):
+                self.weights[i] -= learning_rate * grad_weights[i]
+                self.biases[i]  -= learning_rate * grad_biases[i]
+
+        n_layers = len(self.weights)
 
         for i in range(X.shape[0]):
-            pred = self.forward(X[i])
-            h1 = self.l1_activation(self.l1_pre_activation(X[i]))
+            grad_weights    = []
+            grad_biases     = []
+
+            output, hidden_activations = self.forward(X[i])
 
             # softmax_c(z(x)) - 1(y = c)
-            true_label = np.zeros_like(pred)
+            true_label = np.zeros_like(output)
             true_label[y[i]] = 1
-            grad_z2 = pred - true_label
+            grad_z = output - true_label
 
-            grad_weights_2 = grad_z2[:, None] @ h1[:, None].T
-            grad_biases_2 = grad_z2
+            for j in range(n_layers - 1, -1, -1):
+                h = X[i] if j == 0 else hidden_activations[j - 1]
 
-            grad_h1 = self.out_weights.T @ grad_z2
+                grad_w = grad_z[:, None] @ h[:, None].T
+                grad_weights.append(grad_w)
 
-            # grad_h1 * relu derivative
-            grad_z1 = grad_h1 * ((self.l1_pre_activation(X[i]) > 0) * 1)
+                grad_biases.append(grad_z)
 
-            grad_weights_1 = grad_z1[:, None] @ X[i][:, None].T
-            grad_biases_1 = grad_z1
+                grad_h = self.weights[j].T @ grad_z
 
-            update_weights_and_biases(
-                                        grad_weights_1,
-                                        grad_weights_2,
-                                        grad_biases_1,
-                                        grad_biases_2)
+                grad_z = grad_h * relu_derivative(h)
+
+            grad_weights.reverse()
+            grad_biases.reverse()
+
+            update_weights_and_biases(grad_weights, grad_biases)
 
 def plot(epochs, valid_accs, test_accs):
     plt.xlabel('Epoch')
@@ -225,7 +243,7 @@ def main():
     elif opt.model == 'logistic_regression':
         model = LogisticRegression(n_classes, n_feats)
     else:
-        model = MLP(n_classes, n_feats, opt.hidden_size)
+        model = MLP(n_classes, n_feats, opt.hidden_size, opt.layers)
     epochs = np.arange(1, opt.epochs + 1)
     valid_accs = []
     test_accs = []
